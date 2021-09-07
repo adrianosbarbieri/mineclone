@@ -25,6 +25,60 @@ Game::Game(int w, int h, const char* title)
     generate_grid(grid);
 }
 
+void make_quad_pos(sf::Vertex* v, float ini, float end)
+{
+    v[0].position = { ini, ini };
+    v[1].position = { ini, end };
+    v[2].position = { end, end };
+    v[3].position = { end, ini };
+}
+
+void Game::get_texture(sf::Vertex* v, int8_t cell)
+{
+    const static sf::Color COLOR_HIDDEN = { 127, 127, 127, 255 };
+    const static sf::Color COLOR_ZERO = { 77, 77, 77, 255 };
+    const static sf::Color COLOR_BLUE = { 30, 30, 120, 255 };
+    const sf::Color COLOR_BOMB = ganhou ? sf::Color(20, 255, 20, 255) : sf::Color(255, 20, 20, 255);
+
+    if (has(cell, FLAG)) {
+        v[0].color = COLOR_HIDDEN;
+        v[1].color = COLOR_HIDDEN;
+        v[2].color = COLOR_HIDDEN;
+        v[3].color = COLOR_HIDDEN;
+        v[0].texCoords = { 0.f, 0.f };
+        v[1].texCoords = { 0.f, CELL_SIZEF };
+        v[2].texCoords = { CELL_SIZEF, CELL_SIZEF };
+        v[3].texCoords = { CELL_SIZEF, 0.f };
+    } else if (has(cell, HIDDEN)) {
+        v[0].color = COLOR_HIDDEN;
+        v[1].color = COLOR_HIDDEN;
+        v[2].color = COLOR_HIDDEN;
+        v[3].color = COLOR_HIDDEN;
+    } else if (has(cell, BOMB)) {
+        v[0].color = COLOR_BOMB;
+        v[1].color = COLOR_BOMB;
+        v[2].color = COLOR_BOMB;
+        v[3].color = COLOR_BOMB;
+    } else if (!has(cell, NEAR_BOMB)) {
+        v[0].color = COLOR_ZERO;
+        v[1].color = COLOR_ZERO;
+        v[2].color = COLOR_ZERO;
+        v[3].color = COLOR_ZERO;
+    } else {
+        v[0].color = COLOR_BLUE;
+        v[1].color = COLOR_BLUE;
+        v[2].color = COLOR_BLUE;
+        v[3].color = COLOR_BLUE;
+
+        float textureoffset = static_cast<float>(CELL_SIZEF_BORDER * has(cell, NEAR_BOMB));
+
+        v[0].texCoords = { textureoffset, 0.f };
+        v[1].texCoords = { textureoffset, CELL_SIZEF_BORDER };
+        v[2].texCoords = { textureoffset + 19.f, CELL_SIZEF_BORDER };
+        v[3].texCoords = { textureoffset + 19.f, 0.f };
+    }
+}
+
 bool verifica_ganhou(const Grid& grid)
 {
     for (int i = 0; i < GRID_ROW; i++) {
@@ -44,48 +98,35 @@ bool verifica_ganhou(const Grid& grid)
     return true;
 }
 
+std::array<sf::Vertex, 4 * GRID_ROW * GRID_COL> vertices;
+
 void Game::draw_grid()
 {
-    sf::RectangleShape rect(sf::Vector2f(CELL_SIZEF, CELL_SIZEF));
-
-    const static sf::Color COLOR_HIDDEN = { 127, 127, 127 };
-    const static sf::Color COLOR_ZERO = { 77, 77, 77 };
-    const static sf::Color COLOR_BLUE = { 20, 20, 99 };
-    const sf::Color COLOR_BOMB = ganhou ? sf::Color(20, 255, 20) : sf::Color(255, 20, 20);
+    vertices = {};
 
     for (int i = 0; i < GRID_ROW; i++) {
+        float posi = CELL_SIZEF_BORDER * i;
+
         for (int j = 0; j < GRID_COL; j++) {
-            const float fi = static_cast<float>(i);
-            const float fj = static_cast<float>(j);
+            float posj = CELL_SIZEF_BORDER * j;
 
             int8_t val = grid[i][j];
 
-            rect.setPosition({ fj * CELL_SIZEF_BORDER, fi * CELL_SIZEF_BORDER });
+            sf::Vertex* vertex = &vertices[(j + i * GRID_ROW) * 4];
 
-            if (has(val, FLAG)) {
-                rect.setFillColor(COLOR_HIDDEN);
-                sprite.setPosition({ fj * CELL_SIZEF_BORDER, fi * CELL_SIZEF_BORDER });
-                sprite.setTextureRect(sf::IntRect(0, 0, CELL_SIZE, CELL_SIZE));
-                window.draw(rect);
-                window.draw(sprite);
-            } else if (has(val, HIDDEN)) {
-                rect.setFillColor(COLOR_HIDDEN);
-                window.draw(rect);
-            } else if (has(val, BOMB)) {
-                rect.setFillColor(COLOR_BOMB);
-                window.draw(rect);
-            } else if (!(has(val, NEAR_BOMB))) {
-                rect.setFillColor(COLOR_ZERO);
-                window.draw(rect);
-            } else {
-                rect.setFillColor(COLOR_BLUE);
-                sprite.setPosition({ fj * CELL_SIZEF_BORDER, fi * CELL_SIZEF_BORDER });
-                sprite.setTextureRect({ CELL_SIZE_BORDER * has(val, NEAR_BOMB), 0, CELL_SIZE, CELL_SIZE });
-                window.draw(rect);
-                window.draw(sprite);
-            }
+            vertex[0].position = { 0.f + posj, 0.f + posi };
+            vertex[1].position = { 0.f + posj, 19.f + posi };
+            vertex[2].position = { 19.f + posj, 19.f + posi };
+            vertex[3].position = { 19.f + posj, 0.f + posi };
+
+            get_texture(vertex, val);
         }
     }
+
+    sf::RenderStates state;
+    state.texture = &texture;
+
+    window.draw(&vertices[0], vertices.size(), sf::Quads, state);
 }
 
 void Game::render()
@@ -218,8 +259,8 @@ void handle_mouse_release(const sf::Event& ev, Game& g)
         } else if (ev.mouseButton.button == sf::Mouse::Button::Left) {
             if (!has(val, FLAG)) {
                 if (has(val, BOMB)) {
-                    display_bombs(g.grid);
                     g.game_over = true;
+                    display_bombs(g.grid);
                     return;
                 } else if (has(val, HIDDEN)) {
                     open_cells(g.grid, cellY, cellX);
@@ -229,9 +270,9 @@ void handle_mouse_release(const sf::Event& ev, Game& g)
     }
 
     if (verifica_ganhou(g.grid)) {
-        display_bombs(g.grid);
         g.ganhou = true;
         g.game_over = true;
+        display_bombs(g.grid);
     }
 }
 
@@ -254,8 +295,9 @@ void handle_keyboard(const sf::Event& ev, Game& g)
 int main()
 {
     Game game(window_w, window_h, "Mineclone");
-    //game.window.setVerticalSyncEnabled(true);
+    game.window.setVerticalSyncEnabled(true);
     game.texture.loadFromFile("Icons20.png");
+    game.texture.setSmooth(true);
     game.sprite.setTexture(game.texture);
 
     using namespace std::chrono;
@@ -266,16 +308,17 @@ int main()
     int64_t acum = 0;
 
     while (game.window.isOpen()) {
-        t2 = steady_clock::now();
+
+        steady_clock::time_point t2 = steady_clock::now();
 
         int64_t diff = (t2 - t1).count();
 
         acum += diff;
 
-        if (acum > 1'000'000) {
+        if (acum > 1'000'000'000) {
             // 1s
             game.window.setTitle(std::to_string(1000000000.0 / diff));
-            acum -= 1'000'000;
+            acum -= 1'000'000'000;
         }
 
         t1 = t2;
@@ -287,9 +330,11 @@ int main()
             case sf::Event::Closed:
                 game.window.close();
                 break;
+
             case sf::Event::MouseButtonReleased:
                 handle_mouse_release(ev, game);
                 break;
+
             case sf::Event::KeyPressed:
                 handle_keyboard(ev, game);
                 break;

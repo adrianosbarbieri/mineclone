@@ -1,10 +1,10 @@
 #pragma once
 
-#include "SFML/Window.hpp"
-#include "SFML/Graphics.hpp"
+#include <SFML/Window.hpp>
+#include <SFML/Graphics.hpp>
 
-constexpr int GRID_COL = 40;
-constexpr int GRID_ROW = 40;
+constexpr int GRID_COL = 20;
+constexpr int GRID_ROW = 20;
 constexpr int NUM_BOMBS = (GRID_COL * GRID_ROW) * 0.10;
 constexpr int CELL_SIZE_BORDER = 20;
 constexpr int CELL_SIZE = 19;
@@ -26,6 +26,8 @@ struct Game {
     Game(int w, int h, const char* title);
 
     void draw_grid();
+
+    void get_texture(sf::Vertex* v, int8_t cell);
 
     void render();
 };
