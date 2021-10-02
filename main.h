@@ -3,8 +3,9 @@
 #include <SFML/Window.hpp>
 #include <SFML/Graphics.hpp>
 
-constexpr static int CELL_SIZE_BORDER = 20;
-constexpr static int CELL_SIZE = 19;
+constexpr static float TEXTURE_SIZE = 20.f;
+constexpr static int CELL_SIZE_BORDER = 25;
+constexpr static int CELL_SIZE = 24;
 constexpr static float CELL_SIZEF_BORDER = static_cast<float>(CELL_SIZE_BORDER);
 constexpr static float CELL_SIZEF = static_cast<float>(CELL_SIZE);
 
@@ -17,6 +18,7 @@ enum CELL_FLAGS {
 
 struct Game {
     Game(int n_row, int n_col, int num_bombs, const char* title, bool vsync);
+
     ~Game();
 
     int row;

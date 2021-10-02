@@ -6,6 +6,7 @@
 #include <queue>
 #include "bit_helper.h"
 #include "main.h"
+#include <new>
 
 void Game::get_texture(sf::Vertex* v, int8_t cell) const
 {
@@ -15,69 +16,61 @@ void Game::get_texture(sf::Vertex* v, int8_t cell) const
     const static sf::Color COLOR_RED = sf::Color::Red;
 
     if (has(cell, FLAG)) {
-        float textureoffset = CELL_SIZEF_BORDER * 1.f;
-
+        float texture_offset = TEXTURE_SIZE * 1.f;
         v[0].color = COLOR_CELL;
         v[1].color = COLOR_CELL;
         v[2].color = COLOR_CELL;
         v[3].color = COLOR_CELL;
-
-        v[0].texCoords = { textureoffset, 0.f };
-        v[1].texCoords = { textureoffset, CELL_SIZEF_BORDER };
-        v[2].texCoords = { textureoffset + CELL_SIZEF_BORDER, CELL_SIZEF_BORDER };
-        v[3].texCoords = { textureoffset + CELL_SIZEF_BORDER, 0.f };
+        v[0].texCoords = { texture_offset, 0.f };
+        v[1].texCoords = { texture_offset, TEXTURE_SIZE };
+        v[2].texCoords = { texture_offset + TEXTURE_SIZE, TEXTURE_SIZE };
+        v[3].texCoords = { texture_offset + TEXTURE_SIZE, 0.f };
     } else if (has(cell, HIDDEN)) {
         v[0].color = COLOR_CELL;
         v[1].color = COLOR_CELL;
         v[2].color = COLOR_CELL;
         v[3].color = COLOR_CELL;
-
         v[0].texCoords = { 0.f, 0.f };
-        v[1].texCoords = { 0.f, CELL_SIZEF_BORDER };
-        v[2].texCoords = { CELL_SIZEF_BORDER, CELL_SIZEF_BORDER };
-        v[3].texCoords = { CELL_SIZEF_BORDER, 0.f };
+        v[1].texCoords = { 0.f, TEXTURE_SIZE };
+        v[2].texCoords = { TEXTURE_SIZE, TEXTURE_SIZE };
+        v[3].texCoords = { TEXTURE_SIZE, 0.f };
     } else if (has(cell, BOMB) && !ganhou) {
         v[0].color = COLOR_RED;
         v[1].color = COLOR_RED;
         v[2].color = COLOR_RED;
         v[3].color = COLOR_RED;
-
         v[0].texCoords = { 0.f, 0.f };
-        v[1].texCoords = { 0.f, CELL_SIZEF_BORDER };
-        v[2].texCoords = { CELL_SIZEF_BORDER, CELL_SIZEF_BORDER };
-        v[3].texCoords = { CELL_SIZEF_BORDER, 0.f };
+        v[1].texCoords = { 0.f, TEXTURE_SIZE };
+        v[2].texCoords = { TEXTURE_SIZE, TEXTURE_SIZE };
+        v[3].texCoords = { TEXTURE_SIZE, 0.f };
     } else if (has(cell, BOMB) && ganhou) {
         v[0].color = COLOR_GREEN;
         v[1].color = COLOR_GREEN;
         v[2].color = COLOR_GREEN;
         v[3].color = COLOR_GREEN;
-
         v[0].texCoords = { 0.f, 0.f };
-        v[1].texCoords = { 0.f, CELL_SIZEF_BORDER };
-        v[2].texCoords = { CELL_SIZEF_BORDER, CELL_SIZEF_BORDER };
-        v[3].texCoords = { CELL_SIZEF_BORDER, 0.f };
+        v[1].texCoords = { 0.f, TEXTURE_SIZE };
+        v[2].texCoords = { TEXTURE_SIZE, TEXTURE_SIZE };
+        v[3].texCoords = { TEXTURE_SIZE, 0.f };
     } else if (!has(cell, NEAR_BOMB)) {
         v[0].color = COLOR_ZERO;
         v[1].color = COLOR_ZERO;
         v[2].color = COLOR_ZERO;
         v[3].color = COLOR_ZERO;
-
         v[0].texCoords = { 0.f, 0.f };
-        v[1].texCoords = { 0.f, CELL_SIZEF_BORDER };
-        v[2].texCoords = { CELL_SIZEF_BORDER, CELL_SIZEF_BORDER };
-        v[3].texCoords = { CELL_SIZEF_BORDER, 0.f };
+        v[1].texCoords = { 0.f, TEXTURE_SIZE };
+        v[2].texCoords = { TEXTURE_SIZE, TEXTURE_SIZE };
+        v[3].texCoords = { TEXTURE_SIZE, 0.f };
     } else {
-        float textureoffset = CELL_SIZEF_BORDER * (has(cell, NEAR_BOMB) + 1);
-
+        float texture_offset = TEXTURE_SIZE * (has(cell, NEAR_BOMB) + 1);
         v[0].color = COLOR_CELL;
         v[1].color = COLOR_CELL;
         v[2].color = COLOR_CELL;
         v[3].color = COLOR_CELL;
-
-        v[0].texCoords = { textureoffset, 0.f };
-        v[1].texCoords = { textureoffset, CELL_SIZEF_BORDER };
-        v[2].texCoords = { textureoffset + CELL_SIZEF_BORDER, CELL_SIZEF_BORDER };
-        v[3].texCoords = { textureoffset + CELL_SIZEF_BORDER, 0.f };
+        v[0].texCoords = { texture_offset, 0.f };
+        v[1].texCoords = { texture_offset, TEXTURE_SIZE };
+        v[2].texCoords = { texture_offset + TEXTURE_SIZE, TEXTURE_SIZE };
+        v[3].texCoords = { texture_offset + TEXTURE_SIZE, 0.f };
     }
 }
 
@@ -126,9 +119,9 @@ void Game::set_positions()
             sf::Vertex* vertex = &vertices[(i + j * row) * 4];
 
             vertex[0].position = { 0.f + posj, 0.f + posi };
-            vertex[1].position = { 0.f + posj, 19.f + posi };
-            vertex[2].position = { 19.f + posj, 19.f + posi };
-            vertex[3].position = { 19.f + posj, 0.f + posi };
+            vertex[1].position = { 0.f + posj, CELL_SIZEF + posi };
+            vertex[2].position = { CELL_SIZEF + posj, CELL_SIZEF + posi };
+            vertex[3].position = { CELL_SIZEF + posj, 0.f + posi };
         }
     }
 }
@@ -144,7 +137,7 @@ void Game::generate_grid()
 {
     static std::random_device randomDevice;
     static std::default_random_engine engine(randomDevice());
-    std::vector<std::array<int8_t, 2>> indexes(row * col);
+    static std::vector<std::array<int8_t, 2>> indexes(row * col);
 
     std::fill_n(&grid[0][0], row * col, static_cast<int8_t>(HIDDEN));
 
@@ -188,25 +181,35 @@ void Game::open_cells(int startRow, int startCol)
     constexpr int nextRows[] = { -1, -1, -1, 0, 0, 0, 1, 1, 1 };
     constexpr int nextCols[] = { -1, 0, 1, -1, 0, 1, -1, 0, 1 };
 
-    std::queue<std::array<int, 2>> q;
-    q.push({ startRow, startCol });
+    const int size = row * col;
+    static std::vector<std::array<int, 2>> q(size);
 
-    while (q.size() > 0) {
-        std::array<int, 2> idx = q.front();
-        q.pop();
+    int qfront = 0;
+    int qback = 0;
+    int qcount = 0;
+
+    q[qback++] = { startRow, startCol };
+    qcount++;
+
+    while (qcount > 0) {
+        std::array<int, 2> idx = q[qfront++];
+        qfront = qfront % size;
+        qcount--;
 
         int8_t& val = grid[idx[0]][idx[1]];
 
         if (has(val, HIDDEN)) {
             clear(val, HIDDEN);
 
-            if (!(val & BOMB) && !(val & 0x0F)) {
+            if (!has(val, BOMB) && !has(val, NEAR_BOMB)) {
                 for (int i = 0; i < 9; i++) {
                     int row_i = idx[0] + nextRows[i];
                     int col_i = idx[1] + nextCols[i];
 
                     if (row_i >= 0 && row_i < row && col_i >= 0 && col_i < col) {
-                        q.push({ row_i, col_i });
+                        q[qback++] = { row_i, col_i };
+                        qback = qback % size;
+                        qcount++;
                     }
                 }
             }
@@ -234,7 +237,6 @@ void Game::handle_mouse_release(const sf::Event& ev)
 
     const int posX = ev.mouseButton.x;
     const int posY = ev.mouseButton.y;
-
     const int cellX = posX / CELL_SIZE_BORDER;
     const int cellY = posY / CELL_SIZE_BORDER;
     const int remX = posX % CELL_SIZE_BORDER;
@@ -321,8 +323,8 @@ int main(int argc, const char* argv[])
 {
     using namespace std::chrono;
 
-    int col = 16;
-    int row = 16;
+    int col;
+    int row;
     int num_bombs;
 
     switch (argc) {
@@ -337,6 +339,7 @@ int main(int argc, const char* argv[])
         row = atoi(argv[1]);
         num_bombs = col * row * 0.1;
         break;
+
     default:
         col = 16;
         row = 16;

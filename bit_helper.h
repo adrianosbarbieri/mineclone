@@ -1,10 +1,22 @@
 #pragma once
 #include <cstdint>
 
-void set(int8_t& cell, int8_t flag);
+inline void set(int8_t& cell, int8_t flag)
+{
+    cell |= flag;
+}
 
-int8_t has(int8_t cell, int8_t flag);
+inline int8_t has(int8_t cell, int8_t flag)
+{
+    return cell & flag;
+}
 
-void toggle(int8_t& cell, int8_t flag);
+inline void toggle(int8_t& cell, int8_t flag)
+{
+    cell ^= flag;
+}
 
-void clear(int8_t& cell, int8_t flag);
+inline void clear(int8_t& cell, int8_t flag)
+{
+    cell &= ~(flag);
+}
