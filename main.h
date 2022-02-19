@@ -30,6 +30,7 @@ struct Game {
     sf::Texture texture;
     int8_t** grid;
     std::vector<sf::Vertex> vertices;
+    std::vector<std::array<int, 2>> queue;
 
     void get_texture(sf::Vertex* v, int8_t cell) const;
 
@@ -50,4 +51,6 @@ struct Game {
     void handle_mouse_release(const sf::Event& ev);
 
     void handle_keyboard(const sf::Event& ev);
+
+    static void make_quad(sf::Vertex* v, sf::Color color, sf::Vector2f start, sf::Vector2f end);
 };

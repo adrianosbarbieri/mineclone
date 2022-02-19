@@ -6,7 +6,19 @@
 #include <queue>
 #include "bit_helper.h"
 #include "main.h"
-#include <new>
+
+void Game::make_quad(sf::Vertex* v, sf::Color color, sf::Vector2f start, sf::Vector2f end)
+{
+    v[0].color = color;
+    v[1].color = color;
+    v[2].color = color;
+    v[3].color = color;
+
+    v[0].texCoords = { start.x, start.y };
+    v[1].texCoords = { start.x, end.y };
+    v[2].texCoords = { end.x, end.y };
+    v[3].texCoords = { end.x, start.y };
+}
 
 void Game::get_texture(sf::Vertex* v, int8_t cell) const
 {
@@ -15,63 +27,39 @@ void Game::get_texture(sf::Vertex* v, int8_t cell) const
     const static sf::Color COLOR_GREEN = sf::Color::Green;
     const static sf::Color COLOR_RED = sf::Color::Red;
 
+    sf::Vector2f start;
+    sf::Vector2f end;
+    sf::Color color;
+
     if (has(cell, FLAG)) {
         float texture_offset = TEXTURE_SIZE * 1.f;
-        v[0].color = COLOR_CELL;
-        v[1].color = COLOR_CELL;
-        v[2].color = COLOR_CELL;
-        v[3].color = COLOR_CELL;
-        v[0].texCoords = { texture_offset, 0.f };
-        v[1].texCoords = { texture_offset, TEXTURE_SIZE };
-        v[2].texCoords = { texture_offset + TEXTURE_SIZE, TEXTURE_SIZE };
-        v[3].texCoords = { texture_offset + TEXTURE_SIZE, 0.f };
+        start = { texture_offset, 0.f };
+        end = { texture_offset + TEXTURE_SIZE, TEXTURE_SIZE };
+        color = COLOR_CELL;
     } else if (has(cell, HIDDEN)) {
-        v[0].color = COLOR_CELL;
-        v[1].color = COLOR_CELL;
-        v[2].color = COLOR_CELL;
-        v[3].color = COLOR_CELL;
-        v[0].texCoords = { 0.f, 0.f };
-        v[1].texCoords = { 0.f, TEXTURE_SIZE };
-        v[2].texCoords = { TEXTURE_SIZE, TEXTURE_SIZE };
-        v[3].texCoords = { TEXTURE_SIZE, 0.f };
+        start = { 0.f, 0.f };
+        end = { TEXTURE_SIZE, TEXTURE_SIZE };
+        color = COLOR_CELL;
     } else if (has(cell, BOMB) && !ganhou) {
-        v[0].color = COLOR_RED;
-        v[1].color = COLOR_RED;
-        v[2].color = COLOR_RED;
-        v[3].color = COLOR_RED;
-        v[0].texCoords = { 0.f, 0.f };
-        v[1].texCoords = { 0.f, TEXTURE_SIZE };
-        v[2].texCoords = { TEXTURE_SIZE, TEXTURE_SIZE };
-        v[3].texCoords = { TEXTURE_SIZE, 0.f };
+        start = { 0.f, 0.f };
+        end = { TEXTURE_SIZE, TEXTURE_SIZE };
+        color = COLOR_RED;
     } else if (has(cell, BOMB) && ganhou) {
-        v[0].color = COLOR_GREEN;
-        v[1].color = COLOR_GREEN;
-        v[2].color = COLOR_GREEN;
-        v[3].color = COLOR_GREEN;
-        v[0].texCoords = { 0.f, 0.f };
-        v[1].texCoords = { 0.f, TEXTURE_SIZE };
-        v[2].texCoords = { TEXTURE_SIZE, TEXTURE_SIZE };
-        v[3].texCoords = { TEXTURE_SIZE, 0.f };
+        start = { 0.f, 0.f };
+        end = { TEXTURE_SIZE, TEXTURE_SIZE };
+        color = COLOR_GREEN;
     } else if (!has(cell, NEAR_BOMB)) {
-        v[0].color = COLOR_ZERO;
-        v[1].color = COLOR_ZERO;
-        v[2].color = COLOR_ZERO;
-        v[3].color = COLOR_ZERO;
-        v[0].texCoords = { 0.f, 0.f };
-        v[1].texCoords = { 0.f, TEXTURE_SIZE };
-        v[2].texCoords = { TEXTURE_SIZE, TEXTURE_SIZE };
-        v[3].texCoords = { TEXTURE_SIZE, 0.f };
+        start = { 0.f, 0.f };
+        end = { TEXTURE_SIZE, TEXTURE_SIZE };
+        color = COLOR_ZERO;
     } else {
         float texture_offset = TEXTURE_SIZE * (has(cell, NEAR_BOMB) + 1);
-        v[0].color = COLOR_CELL;
-        v[1].color = COLOR_CELL;
-        v[2].color = COLOR_CELL;
-        v[3].color = COLOR_CELL;
-        v[0].texCoords = { texture_offset, 0.f };
-        v[1].texCoords = { texture_offset, TEXTURE_SIZE };
-        v[2].texCoords = { texture_offset + TEXTURE_SIZE, TEXTURE_SIZE };
-        v[3].texCoords = { texture_offset + TEXTURE_SIZE, 0.f };
+        start = { texture_offset, 0.f };
+        end = { texture_offset + TEXTURE_SIZE, TEXTURE_SIZE };
+        color = COLOR_CELL;
     }
+
+    make_quad(v, color, start, end);
 }
 
 bool Game::verifica_ganhou() const
@@ -103,7 +91,7 @@ void Game::draw_grid()
         }
     }
 
-    sf::RenderStates state;
+    sf::RenderStates state = sf::RenderStates::Default;
     state.texture = &texture;
     window.draw(&vertices[0], vertices.size(), sf::Quads, state);
 }
@@ -137,14 +125,14 @@ void Game::generate_grid()
 {
     static std::random_device randomDevice;
     static std::default_random_engine engine(randomDevice());
-    static std::vector<std::array<int8_t, 2>> indexes(row * col);
+    static std::vector<std::array<int, 2>> indexes(row * col);
 
     std::fill_n(&grid[0][0], row * col, static_cast<int8_t>(HIDDEN));
 
     size_t n = 0;
 
-    for (int8_t i = 0; i < row; i++) {
-        for (int8_t j = 0; j < col; j++) {
+    for (int i = 0; i < row; i++) {
+        for (int j = 0; j < col; j++) {
             indexes[n++] = { i, j };
         }
     }
@@ -182,17 +170,16 @@ void Game::open_cells(int startRow, int startCol)
     constexpr int nextCols[] = { -1, 0, 1, -1, 0, 1, -1, 0, 1 };
 
     const int size = row * col;
-    static std::vector<std::array<int, 2>> q(size);
 
     int qfront = 0;
     int qback = 0;
     int qcount = 0;
 
-    q[qback++] = { startRow, startCol };
+    queue[qback++] = { startRow, startCol };
     qcount++;
 
     while (qcount > 0) {
-        std::array<int, 2> idx = q[qfront++];
+        std::array<int, 2> idx = queue[qfront++];
         qfront = qfront % size;
         qcount--;
 
@@ -207,7 +194,7 @@ void Game::open_cells(int startRow, int startCol)
                     int col_i = idx[1] + nextCols[i];
 
                     if (row_i >= 0 && row_i < row && col_i >= 0 && col_i < col) {
-                        q[qback++] = { row_i, col_i };
+                        queue[qback++] = { row_i, col_i };
                         qback = qback % size;
                         qcount++;
                     }
@@ -296,6 +283,7 @@ Game::Game(int n_row, int n_col, int num_bombs, const char* title, bool vsync)
     , game_over(false)
     , window(sf::VideoMode(n_row * CELL_SIZE_BORDER, n_col * CELL_SIZE_BORDER), title, sf::Style::Close)
     , vertices(4 * n_row * n_col)
+    , queue(n_col * n_row)
 {
     window.setVerticalSyncEnabled(vsync);
     int8_t* a = new int8_t[row * col];
@@ -341,8 +329,8 @@ int main(int argc, const char* argv[])
         break;
 
     default:
-        col = 16;
-        row = 16;
+        col = 32;
+        row = 32;
         num_bombs = col * row * 0.1;
         break;
     }
